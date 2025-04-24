@@ -50,11 +50,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation(libs.places)
-
-
-
-
-
-
+    implementation(libs.glide)
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0") // Required for Glide
 
 }
