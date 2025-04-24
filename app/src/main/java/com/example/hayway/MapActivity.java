@@ -54,6 +54,11 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.DatabaseError;
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
     private GoogleMap mMap;
@@ -198,6 +203,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         Toast.makeText(this, "Map is ready!", Toast.LENGTH_SHORT).show();
         mMap = googleMap;
         enableMyLocation();
+        loadPlacesFromFirebase();
     }
 
     private void enableMyLocation() {
@@ -234,4 +240,28 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
             }
         }
     }
+    private void loadPlacesFromFirebase() {
+        DatabaseReference placesRef = FirebaseDatabase.getInstance().getReference("places");
+
+        placesRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for (DataSnapshot placeSnapshot : snapshot.getChildren()) {
+                    SightPlace place = placeSnapshot.getValue(SightPlace.class);
+                    if (place != null) {
+                        LatLng location = new LatLng(place.latitude, place.longitude);
+                        mMap.addMarker(new MarkerOptions()
+                                .position(location)
+                                .title(place.name));
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(MapActivity.this, "Failed to load places", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
 }
