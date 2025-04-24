@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="lavender">#8F5BD4</color>
+    <color name="grey">#E6E4F1</color>
+    <color name="orange">#FFA751</color>
+    <color name="orange_translucent">#CCFFA500</color> <!-- 80% opacity -->
+    <color name="purple">#8F5BD4</color>
+
+</resources>

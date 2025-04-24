@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "339081778591",
+    "project_id": "hayway-4ab0a",
+    "storage_bucket": "hayway-4ab0a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:339081778591:android:fc96c16fcfcd99870e19aa",
+        "android_client_info": {
+          "package_name": "com.example.hayway"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBde_lHUwAD7U_z5kma4Aj8ORRVL2-Vg2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
