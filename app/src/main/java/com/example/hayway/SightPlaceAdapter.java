@@ -11,59 +11,65 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class SightPlaceAdapter extends RecyclerView.Adapter<SightPlaceAdapter.PlaceViewHolder> implements Filterable {
+public class SightPlaceAdapter
+        extends RecyclerView.Adapter<SightPlaceAdapter.PlaceViewHolder>
+        implements Filterable {
 
-    private final List<SightPlace> placeList;
-    private List<SightPlace> placeListFull;
+    private final List<SightPlace> fullList = new ArrayList<>();
+    private final List<SightPlace> filteredList = new ArrayList<>();
     private final Context context;
 
-    public SightPlaceAdapter(List<SightPlace> placeList, Context context) {
-        this.placeList = placeList;
-        this.placeListFull = new ArrayList<>(placeList);
+    public SightPlaceAdapter(List<SightPlace> initialList, Context context) {
         this.context = context;
+        setPlaces(initialList);
+    }
+
+    public void setPlaces(List<SightPlace> places) {
+        fullList.clear();
+        fullList.addAll(places);
+        filteredList.clear();
+        filteredList.addAll(places);
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public PlaceViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_place, parent, false);
-        return new PlaceViewHolder(view);
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_place, parent, false);
+        return new PlaceViewHolder(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull PlaceViewHolder holder, int position) {
-        SightPlace place = placeList.get(position);
+        SightPlace place = filteredList.get(position);
         holder.placeName.setText(place.name);
         holder.placeDescription.setText(place.description);
         Glide.with(context).load(place.photoUrl).into(holder.placeImage);
-
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, PlaceDetailActivity.class);
-            intent.putExtra("name", place.name);
-            intent.putExtra("description", place.description);
-            intent.putExtra("imageUrl", place.photoUrl);
-            intent.putExtra("latitude", place.latitude);
-            intent.putExtra("longitude", place.longitude);
-            context.startActivity(intent);
+            Intent i = new Intent(context, PlaceDetailActivity.class);
+            i.putExtra("name", place.name);
+            i.putExtra("description", place.description);
+            i.putExtra("imageUrl", place.photoUrl);
+            i.putExtra("latitude", place.latitude);
+            i.putExtra("longitude", place.longitude);
+            context.startActivity(i);
         });
     }
 
     @Override
     public int getItemCount() {
-        return placeList.size();
+        return filteredList.size();
     }
 
     static class PlaceViewHolder extends RecyclerView.ViewHolder {
         TextView placeName, placeDescription;
         ImageView placeImage;
-
-        public PlaceViewHolder(@NonNull View itemView) {
+        PlaceViewHolder(@NonNull View itemView) {
             super(itemView);
             placeName = itemView.findViewById(R.id.placeName);
             placeDescription = itemView.findViewById(R.id.placeDescription);
@@ -79,27 +85,27 @@ public class SightPlaceAdapter extends RecyclerView.Adapter<SightPlaceAdapter.Pl
     private final Filter placeFilter = new Filter() {
         @Override
         protected FilterResults performFiltering(CharSequence constraint) {
-            List<SightPlace> filteredList = new ArrayList<>();
+            List<SightPlace> temp = new ArrayList<>();
             if (constraint == null || constraint.length() == 0) {
-                filteredList.addAll(placeListFull);
+                temp.addAll(fullList);
             } else {
-                String filterPattern = constraint.toString().toLowerCase().trim();
-                for (SightPlace item : placeListFull) {
-                    if (item.name.toLowerCase().contains(filterPattern)) {
-                        filteredList.add(item);
+                String pat = constraint.toString().toLowerCase().trim();
+                for (SightPlace p : fullList) {
+                    if (p.name.toLowerCase().startsWith(pat)) {
+                        temp.add(p);
                     }
                 }
             }
-
-            FilterResults results = new FilterResults();
-            results.values = filteredList;
-            return results;
+            FilterResults res = new FilterResults();
+            res.values = temp;
+            return res;
         }
 
         @Override
         protected void publishResults(CharSequence constraint, FilterResults results) {
-            placeList.clear();
-            placeList.addAll((List<SightPlace>) results.values);
+            filteredList.clear();
+            //noinspection unchecked
+            filteredList.addAll((List<SightPlace>) results.values);
             notifyDataSetChanged();
         }
     };

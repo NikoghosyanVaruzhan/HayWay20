@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.hayway.R;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -31,36 +30,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ListActivity extends AppCompatActivity {
+    private RecyclerView recyclerView;
+    private SearchView searchView;
+    private SightPlaceAdapter adapter;
+    private List<SightPlace> placeList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_list);
+
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_list);
-        RecyclerView recyclerView = findViewById(R.id.placesRecyclerView);
-        SearchView searchView = findViewById(R.id.searchView);
 
-        List<SightPlace> placeList = new ArrayList<>();
-        SightPlaceAdapter adapter = new SightPlaceAdapter(placeList, this);
+        recyclerView = findViewById(R.id.placesRecyclerView);
+        searchView = findViewById(R.id.searchView);
+
+        placeList = new ArrayList<>();
+        adapter = new SightPlaceAdapter(placeList, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("places");
-        ref.addValueEventListener(new ValueEventListener() {
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                placeList.clear();
-                for (DataSnapshot placeSnap : snapshot.getChildren()) {
-                    SightPlace place = placeSnap.getValue(SightPlace.class);
-                    if (place != null) placeList.add(place);
+                List<SightPlace> loaded = new ArrayList<>();
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    SightPlace p = ds.getValue(SightPlace.class);
+                    if (p != null) loaded.add(p);
                 }
-                adapter.notifyDataSetChanged();
+                adapter.setPlaces(loaded);
             }
-
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -68,7 +72,6 @@ public class ListActivity extends AppCompatActivity {
             public boolean onQueryTextSubmit(String query) {
                 return false;
             }
-
             @Override
             public boolean onQueryTextChange(String newText) {
                 adapter.getFilter().filter(newText);
@@ -76,21 +79,6 @@ public class ListActivity extends AppCompatActivity {
             }
         });
 
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_list) {
-                return true;
-            } else if (id == R.id.nav_map) {
-                startActivity(new Intent(getApplicationContext(), MapActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (id == R.id.nav_news) {
-                startActivity(new Intent(getApplicationContext(), NewsActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            }
-            return false;
-        });
         ImageButton menuButton = findViewById(R.id.menu_button);
         menuButton.setOnClickListener(v -> {
             PopupMenu popupMenu = new PopupMenu(ListActivity.this, v);
@@ -105,27 +93,19 @@ public class ListActivity extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-
             popupMenu.setOnMenuItemClickListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.menu_home) {
-                    // Already in home (map), do nothing
-                    return true;
-                } else if (id == R.id.menu_profile) {
+                if (item.getItemId() == R.id.menu_home) return true;
+                else if (item.getItemId() == R.id.menu_profile) {
                     startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
                     return true;
-                } else if (id == R.id.menu_telegram) {
-                    Intent telegramIntent = new Intent(Intent.ACTION_VIEW);
-                    telegramIntent.setData(Uri.parse("https://t.me/YourTelegramUsername")); // <-- change to your real link
+                } else if (item.getItemId() == R.id.menu_telegram) {
+                    Intent telegramIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/YourTelegramUsername"));
                     startActivity(telegramIntent);
                     return true;
                 }
                 return false;
             });
-
             popupMenu.show();
-
             for (int i = 0; i < popupMenu.getMenu().size(); i++) {
                 Drawable icon = popupMenu.getMenu().getItem(i).getIcon();
                 if (icon != null) {
@@ -133,8 +113,6 @@ public class ListActivity extends AppCompatActivity {
                 }
             }
         });
-
-
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
