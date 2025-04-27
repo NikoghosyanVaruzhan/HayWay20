@@ -7,5 +7,7 @@
     <color name="orange">#FFA751</color>
     <color name="orange_translucent">#CCFFA500</color> <!-- 80% opacity -->
     <color name="purple">#8F5BD4</color>
+    <color name="visited_background">#D0F0C0</color>
+
 
 </resources>

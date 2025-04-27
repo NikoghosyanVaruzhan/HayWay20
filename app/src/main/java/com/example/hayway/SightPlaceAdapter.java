@@ -1,5 +1,6 @@
 package com.example.hayway;
 
+
 import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
@@ -10,6 +11,8 @@ import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;  // import CardView
+import androidx.core.content.ContextCompat;  // import for colors
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import java.util.ArrayList;
@@ -50,6 +53,18 @@ public class SightPlaceAdapter
         holder.placeName.setText(place.name);
         holder.placeDescription.setText(place.description);
         Glide.with(context).load(place.photoUrl).into(holder.placeImage);
+
+        // Highlight visited places
+        if (place.isVisited()) {
+            holder.cardView.setCardBackgroundColor(
+                    ContextCompat.getColor(context, R.color.visited_background)
+            );
+        } else {
+            holder.cardView.setCardBackgroundColor(
+                    ContextCompat.getColor(context, android.R.color.white)
+            );
+        }
+
         holder.itemView.setOnClickListener(v -> {
             Intent i = new Intent(context, PlaceDetailActivity.class);
             i.putExtra("name", place.name);
@@ -67,10 +82,13 @@ public class SightPlaceAdapter
     }
 
     static class PlaceViewHolder extends RecyclerView.ViewHolder {
+        CardView cardView;  // reference to the CardView
         TextView placeName, placeDescription;
         ImageView placeImage;
+
         PlaceViewHolder(@NonNull View itemView) {
             super(itemView);
+            cardView = itemView.findViewById(R.id.cardView);
             placeName = itemView.findViewById(R.id.placeName);
             placeDescription = itemView.findViewById(R.id.placeDescription);
             placeImage = itemView.findViewById(R.id.placeImage);
