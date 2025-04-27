@@ -6,91 +6,121 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import com.example.hayway.R;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class NewsActivity extends AppCompatActivity {
+    private NewsAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_news);
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
-        bottomNavigationView.setSelectedItemId(R.id.nav_news);
 
+        // RecyclerView setup
+        RecyclerView rv = findViewById(R.id.newsRecyclerView);
+        rv.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new NewsAdapter(this);
+        rv.setAdapter(adapter);
 
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_news) {
-                return true;
-            } else if (id == R.id.nav_list) {
-                startActivity(new Intent(getApplicationContext(), ListActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (id == R.id.nav_map) {
-                startActivity(new Intent(getApplicationContext(), MapActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
+        // Load news from Firebase
+        DatabaseReference ref = FirebaseDatabase.getInstance()
+                .getReference("news");
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snap) {
+                List<NewsItem> list = new ArrayList<>();
+                for (DataSnapshot ds : snap.getChildren()) {
+                    NewsItem item = ds.getValue(NewsItem.class);
+                    if (item != null) list.add(item);
+                }
+                adapter.setNews(list);
             }
-            return false;
+            @Override public void onCancelled(@NonNull DatabaseError err) {
+                Toast.makeText(NewsActivity.this,
+                        "Failed to load news", Toast.LENGTH_SHORT).show();
+            }
         });
-        ImageButton menuButton = findViewById(R.id.menu_button);
-        menuButton.setOnClickListener(v -> {
-            PopupMenu popupMenu = new PopupMenu(NewsActivity.this, v);
-            popupMenu.getMenuInflater().inflate(R.menu.top_menu, popupMenu.getMenu());
+
+        // Bottom navigation (unchanged)
+        BottomNavigationView bnv = findViewById(R.id.bottom_navigation);
+        bnv.setSelectedItemId(R.id.nav_news);
+        bnv.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_news) return true;
+            else if (id == R.id.nav_list)
+                startActivity(new Intent(this, ListActivity.class));
+            else if (id == R.id.nav_map)
+                startActivity(new Intent(this, MapActivity.class));
+            overridePendingTransition(0,0);
+            return true;
+        });
+
+        // Top menu button (unchanged)
+        ImageButton mb = findViewById(R.id.menu_button);
+        mb.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(NewsActivity.this, v);
+            popup.getMenuInflater().inflate(R.menu.top_menu, popup.getMenu());
             try {
-                java.lang.reflect.Field mField = popupMenu.getClass().getDeclaredField("mPopup");
-                mField.setAccessible(true);
-                Object menuPopupHelper = mField.get(popupMenu);
-                Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
-                java.lang.reflect.Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
-                setForceIcons.invoke(menuPopupHelper, true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-
-            popupMenu.setOnMenuItemClickListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.menu_home) {
-                    // Already in home (map), do nothing
+                java.lang.reflect.Field f = popup.getClass()
+                        .getDeclaredField("mPopup");
+                f.setAccessible(true);
+                Object helper = f.get(popup);
+                Class<?> cls = Class.forName(helper.getClass().getName());
+                java.lang.reflect.Method m = cls.getMethod(
+                        "setForceShowIcon", boolean.class);
+                m.invoke(helper, true);
+            } catch (Exception e) { e.printStackTrace(); }
+            popup.setOnMenuItemClickListener(mi -> {
+                int i = mi.getItemId();
+                if (i == R.id.menu_home) return true;
+                else if (i == R.id.menu_profile) {
+                    startActivity(new Intent(this, ProfileActivity.class));
                     return true;
-                } else if (id == R.id.menu_profile) {
-                    startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
-                    return true;
-                } else if (id == R.id.menu_telegram) {
-                    Intent telegramIntent = new Intent(Intent.ACTION_VIEW);
-                    telegramIntent.setData(Uri.parse("https://t.me/YourTelegramUsername")); // <-- change to your real link
-                    startActivity(telegramIntent);
+                } else if (i == R.id.menu_telegram) {
+                    Intent ti = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("https://t.me/YourTelegramUsername"));
+                    startActivity(ti);
                     return true;
                 }
                 return false;
             });
-
-            popupMenu.show();
-            for (int i = 0; i < popupMenu.getMenu().size(); i++) {
-                Drawable icon = popupMenu.getMenu().getItem(i).getIcon();
-                if (icon != null) {
-                    icon.mutate().setTint(ContextCompat.getColor(NewsActivity.this, R.color.purple));
-                }
+            popup.show();
+            for (int k=0; k<popup.getMenu().size(); k++) {
+                Drawable ic = popup.getMenu().getItem(k).getIcon();
+                if (ic!=null) ic.mutate()
+                        .setTint(ContextCompat.getColor(this, R.color.purple));
             }
         });
 
-
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
-            return insets;
-        });
+        // Insets listener
+        ViewCompat.setOnApplyWindowInsetsListener(
+                findViewById(R.id.main), (v,insets) -> {
+                    Insets sys = insets.getInsets(
+                            WindowInsetsCompat.Type.systemBars());
+                    v.setPadding(sys.left, sys.top,
+                            sys.right, 0);
+                    return insets;
+                });
     }
 }

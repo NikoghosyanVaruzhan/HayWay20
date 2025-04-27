@@ -79,45 +79,61 @@ public class ListActivity extends AppCompatActivity {
             }
         });
 
-        ImageButton menuButton = findViewById(R.id.menu_button);
-        menuButton.setOnClickListener(v -> {
-            PopupMenu popupMenu = new PopupMenu(ListActivity.this, v);
-            popupMenu.getMenuInflater().inflate(R.menu.top_menu, popupMenu.getMenu());
+        BottomNavigationView bnv = findViewById(R.id.bottom_navigation);
+        bnv.setSelectedItemId(R.id.nav_list);
+        bnv.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_list) return true;
+            else if (id == R.id.nav_news)
+                startActivity(new Intent(this, NewsActivity.class));
+            else if (id == R.id.nav_map)
+                startActivity(new Intent(this, MapActivity.class));
+            overridePendingTransition(0,0);
+            return true;
+        });
+        ImageButton mb = findViewById(R.id.menu_button);
+        mb.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(ListActivity.this, v);
+            popup.getMenuInflater().inflate(R.menu.top_menu, popup.getMenu());
             try {
-                java.lang.reflect.Field mField = popupMenu.getClass().getDeclaredField("mPopup");
-                mField.setAccessible(true);
-                Object menuPopupHelper = mField.get(popupMenu);
-                Class<?> classPopupHelper = Class.forName(menuPopupHelper.getClass().getName());
-                java.lang.reflect.Method setForceIcons = classPopupHelper.getMethod("setForceShowIcon", boolean.class);
-                setForceIcons.invoke(menuPopupHelper, true);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            popupMenu.setOnMenuItemClickListener(item -> {
-                if (item.getItemId() == R.id.menu_home) return true;
-                else if (item.getItemId() == R.id.menu_profile) {
-                    startActivity(new Intent(getApplicationContext(), ProfileActivity.class));
+                java.lang.reflect.Field f = popup.getClass()
+                        .getDeclaredField("mPopup");
+                f.setAccessible(true);
+                Object helper = f.get(popup);
+                Class<?> cls = Class.forName(helper.getClass().getName());
+                java.lang.reflect.Method m = cls.getMethod(
+                        "setForceShowIcon", boolean.class);
+                m.invoke(helper, true);
+            } catch (Exception e) { e.printStackTrace(); }
+            popup.setOnMenuItemClickListener(mi -> {
+                int i = mi.getItemId();
+                if (i == R.id.menu_home) return true;
+                else if (i == R.id.menu_profile) {
+                    startActivity(new Intent(this, ProfileActivity.class));
                     return true;
-                } else if (item.getItemId() == R.id.menu_telegram) {
-                    Intent telegramIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/YourTelegramUsername"));
-                    startActivity(telegramIntent);
+                } else if (i == R.id.menu_telegram) {
+                    Intent ti = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("https://t.me/YourTelegramUsername"));
+                    startActivity(ti);
                     return true;
                 }
                 return false;
             });
-            popupMenu.show();
-            for (int i = 0; i < popupMenu.getMenu().size(); i++) {
-                Drawable icon = popupMenu.getMenu().getItem(i).getIcon();
-                if (icon != null) {
-                    icon.mutate().setTint(ContextCompat.getColor(ListActivity.this, R.color.purple));
-                }
+            popup.show();
+            for (int k=0; k<popup.getMenu().size(); k++) {
+                Drawable ic = popup.getMenu().getItem(k).getIcon();
+                if (ic!=null) ic.mutate()
+                        .setTint(ContextCompat.getColor(this, R.color.purple));
             }
         });
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
-            return insets;
-        });
+        ViewCompat.setOnApplyWindowInsetsListener(
+                findViewById(R.id.main), (v,insets) -> {
+                    Insets sys = insets.getInsets(
+                            WindowInsetsCompat.Type.systemBars());
+                    v.setPadding(sys.left, sys.top,
+                            sys.right, 0);
+                    return insets;
+                });
     }
 }
